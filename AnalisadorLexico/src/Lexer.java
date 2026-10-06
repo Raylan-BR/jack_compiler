@@ -37,6 +37,26 @@ public class Lexer {
                 position++;
                 continue;
             }
+
+            // Número inteiro
+            if (Character.isDigit(current)) {
+                tokens.add(readInteger());
+                continue;
+            }
+
+            // Identificador ou keyword
+            if (Character.isLetter(current) || current == '_') {
+                tokens.add(readIdentifierOrKeyword());
+                continue;
+            }
+
+            // Caractere inválido
+            throw new RuntimeException(
+                    "Caractere inválido na posição "
+                            + position
+                            + ": "
+                            + current
+            );
         }
 
         return tokens;
@@ -69,6 +89,67 @@ public class Lexer {
 
         throw new RuntimeException(
                 "String não fechada."
+        );
+    }
+    
+    private Token readInteger() {
+
+        StringBuilder value = new StringBuilder();
+
+        while (position < input.length()
+                && Character.isDigit(input.charAt(position))) {
+
+            value.append(input.charAt(position));
+            position++;
+        }
+
+        int number = Integer.parseInt(value.toString());
+
+        // Jack permite inteiros de 0 a 32767
+        if (number < 0 || number > 32767) {
+            throw new RuntimeException(
+                    "Integer constant fora do intervalo: "
+                            + number
+            );
+        }
+
+        return new Token(
+                TokenType.INTEGER_CONSTANT,
+                value.toString()
+        );
+    }
+
+    private Token readIdentifierOrKeyword() {
+
+        StringBuilder value = new StringBuilder();
+
+        while (position < input.length()) {
+
+            char current = input.charAt(position);
+
+            if (Character.isLetterOrDigit(current)
+                    || current == '_') {
+
+                value.append(current);
+                position++;
+
+            } else {
+                break;
+            }
+        }
+
+        String word = value.toString();
+
+        if (JackKeywords.isKeyword(word)) {
+            return new Token(
+                    TokenType.KEYWORD,
+                    word
+            );
+        }
+
+        return new Token(
+                TokenType.IDENTIFIER,
+                word
         );
     }
 }
