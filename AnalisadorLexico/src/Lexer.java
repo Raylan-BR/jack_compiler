@@ -25,6 +25,24 @@ public class Lexer {
                 continue;
             }
 
+            // Comentário de linha
+            if (current == '/'
+                    && position + 1 < input.length()
+                    && input.charAt(position + 1) == '/') {
+
+                skipLineComment();
+                continue;
+            }
+
+            // Comentário de bloco
+            if (current == '/'
+                    && position + 1 < input.length()
+                    && input.charAt(position + 1) == '*') {
+
+                skipBlockComment();
+                continue;
+            }
+
             // String
             if (current == '"') {
                 tokens.add(readString());
@@ -156,6 +174,44 @@ public class Lexer {
         return new Token(
                 TokenType.IDENTIFIER,
                 word
+        );
+    }
+
+    private void skipLineComment() {
+
+        // Pula os dois caracteres "//"
+        position += 2;
+
+        // Ignora tudo até o final da linha
+        while (position < input.length()
+                && input.charAt(position) != '\n') {
+
+            position++;
+        }
+    }
+
+    private void skipBlockComment() {
+
+        // Pula os dois caracteres "/*"
+        position += 2;
+
+        while (position < input.length()) {
+
+            // Verifica se encontrou "*/"
+            if (input.charAt(position) == '*'
+                    && position + 1 < input.length()
+                    && input.charAt(position + 1) == '/') {
+
+                position += 2;
+                return;
+            }
+
+            position++;
+        }
+
+        // Chegou ao fim do arquivo sem encontrar "*/"
+        throw new RuntimeException(
+                "Comentário de bloco não fechado."
         );
     }
 }
