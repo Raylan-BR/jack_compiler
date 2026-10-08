@@ -10,6 +10,17 @@ public class Token {
         this.value = value;
     }
 
+    // Retorna o tipo do token
+    public TokenType getType() {
+        return type;
+    }
+
+    // Retorna o valor do token
+    public String getValue() {
+        return value;
+    }
+
+    @Override
     public String toString() {
         return "<"+ type +">" + value + "</"+ type + ">";
     }
