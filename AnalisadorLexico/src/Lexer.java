@@ -19,6 +19,12 @@ public class Lexer {
 
             char current = input.charAt(position);
 
+            // Ignorar espaços, tabs e quebras de linha
+            if (Character.isWhitespace(current)) {
+                position++;
+                continue;
+            }
+
             // String
             if (current == '"') {
                 tokens.add(readString());
