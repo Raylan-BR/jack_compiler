@@ -25,21 +25,47 @@ public class Lexer {
                 continue;
             }
 
-            // Comentário de linha
+            // Ignorar comentários de linha: //
             if (current == '/'
                     && position + 1 < input.length()
                     && input.charAt(position + 1) == '/') {
 
-                skipLineComment();
+                position += 2;
+
+                while (position < input.length()
+                        && input.charAt(position) != '\n'
+                        && input.charAt(position) != '\r') {
+                    position++;
+                }
+
                 continue;
             }
 
-            // Comentário de bloco
+            // Ignorar comentários de bloco: /* ... */
             if (current == '/'
                     && position + 1 < input.length()
                     && input.charAt(position + 1) == '*') {
 
-                skipBlockComment();
+                position += 2;
+                boolean closed = false;
+
+                while (position + 1 < input.length()) {
+                    if (input.charAt(position) == '*'
+                            && input.charAt(position + 1) == '/') {
+                        position += 2;
+                        closed = true;
+                        break;
+                    }
+
+                    position++;
+                }
+
+                if (!closed) {
+                    throw new RuntimeException(
+                        "Comentário de bloco não terminado."
+                    );
+                }
+
                 continue;
             }
 

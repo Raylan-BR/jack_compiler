@@ -3,6 +3,7 @@ import java.util.List;
 public class LexerTest {
 
     public static void main(String[] args) {
+        // Testes de tokens básicos
         testKeywords();
         testIdentifiers();
         testSymbols();
@@ -10,8 +11,15 @@ public class LexerTest {
         testStringConstants();
         testInvalidInteger();
         testUnterminatedString();
+        
+        // Testes de comentários e espaços em branco
+        testWhitespace();
+        testLineComments();
+        testBlockComments();
+        testMultilineComments();
+        testUnterminatedBlockComment();
 
-        System.out.println("\nTodos os testes do commit 2 foram executados!");
+        System.out.println("\nTodos os testes foram executados!");
     }
 
     private static void testKeywords() {
@@ -65,6 +73,106 @@ public class LexerTest {
         assertInvalidInput("\"texto sem fechamento");
 
         System.out.println("PASSOU: rejeição de string não terminada");
+    }
+
+    
+    private static void testWhitespace() {
+        String input = "class \t Main\r\n { \n }";
+
+        assertTokenSequence(
+            input,
+            "class", "Main", "{", "}"
+        );
+
+        System.out.println("PASSOU: espaços em branco");
+    }
+
+    
+    
+    private static void testLineComments() {
+        String input =
+            "class Main { // comentário de linha\n" +
+            "function void main() { return; } // outro comentário";
+
+        assertTokenSequence(
+            input,
+            "class", "Main", "{",
+            "function", "void", "main", "(",
+            ")", "{", "return", ";", "}"
+        );
+
+        System.out.println("PASSOU: comentários de linha");
+    }
+
+    
+    private static void testBlockComments() {
+        String input =
+            "class /* comentário */ Main { }";
+
+        assertTokenSequence(
+            input,
+            "class", "Main", "{", "}"
+        );
+
+        System.out.println("PASSOU: comentários de bloco");
+    }
+
+    
+    private static void testMultilineComments() {
+        String input =
+            "class Main {\n" +
+            "/* comentário\n" +
+            "   em várias linhas\n" +
+            "*/\n" +
+            "function void main() { return; }\n" +
+            "}";
+
+        assertTokenSequence(
+            input,
+            "class", "Main", "{",
+            "function", "void", "main", "(",
+            ")", "{", "return", ";", "}", "}"
+        );
+
+        System.out.println("PASSOU: comentários multilinha");
+    }
+
+    
+    private static void testUnterminatedBlockComment() {
+        assertInvalidInput("class Main { /* comentário sem fechamento");
+
+        System.out.println("PASSOU: rejeição de comentário não terminado");
+    }
+
+    
+    private static void assertTokenSequence(
+            String input,
+            String... expectedValues) {
+
+        Lexer lexer = new Lexer(input);
+        List<Token> tokens = lexer.tokenize();
+
+        if (tokens.size() != expectedValues.length) {
+            throw new AssertionError(
+                "Quantidade de tokens incorreta. Esperado: "
+                + expectedValues.length
+                + ", recebido: " + tokens.size()
+                + "\nEntrada: " + input
+                + "\nTokens: " + tokens
+            );
+        }
+
+        for (int i = 0; i < expectedValues.length; i++) {
+            String actualValue = tokens.get(i).getValue();
+
+            if (!actualValue.equals(expectedValues[i])) {
+                throw new AssertionError(
+                    "Token na posição " + i
+                    + ": esperado [" + expectedValues[i]
+                    + "], recebido [" + actualValue + "]"
+                );
+            }
+        }
     }
 
     private static void assertSingleToken(
