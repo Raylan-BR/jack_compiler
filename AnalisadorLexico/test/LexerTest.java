@@ -1,3 +1,8 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import java.util.List;
 
 public class LexerTest {
@@ -18,6 +23,8 @@ public class LexerTest {
         testBlockComments();
         testMultilineComments();
         testUnterminatedBlockComment();
+
+        testOfficialFiles();
 
         System.out.println("\nTodos os testes foram executados!");
     }
@@ -145,6 +152,42 @@ public class LexerTest {
     }
 
     
+    private static void testOfficialFiles() {
+        String[] fileNames = {
+            "Main.jack",
+            "Square.jack",
+            "SquareGame.jack"
+        };
+
+        for (String fileName : fileNames) {
+            Path path = Path.of("test", "fixtures", fileName);
+
+            try {
+                String input = Files.readString(path);
+
+                Lexer lexer = new Lexer(input);
+                List<Token> tokens = lexer.tokenize();
+
+                if (tokens.isEmpty()) {
+                    throw new AssertionError(
+                        "Nenhum token foi gerado para " + fileName
+                    );
+                }
+
+                System.out.println(
+                    "PASSOU: " + fileName
+                    + " (" + tokens.size() + " tokens)"
+                );
+
+            } catch (IOException e) {
+                throw new RuntimeException(
+                    "Não foi possível ler o arquivo: " + path,
+                    e
+                );
+            }
+        }
+    }
+
     private static void assertTokenSequence(
             String input,
             String... expectedValues) {

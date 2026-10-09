@@ -1,28 +1,15 @@
+
 import java.util.Set;
 
-public final class JackSymbols {
+public class JackSymbols {
 
-    private JackSymbols() {
-    }
-
-    public static final Set<Character> SYMBOLS = Set.of(
-            '{',
-            '}',
-            '(',
-            ')',
-            '.',
-            ',',
-            ';',
-            '+',
-            '-',
-            '*',
-            '/',
-            '&',
-            '|',
-            '<',
-            '>',
-            '=',
-            '~'
+    private static final Set<Character> SYMBOLS = Set.of(
+        '{', '}', '(', ')',
+        '[', ']',
+        '.', ',', ';',
+        '+', '-', '*', '/',
+        '&', '|', '<', '>',
+        '=', '~'
     );
 
     public static boolean isSymbol(char c) {
