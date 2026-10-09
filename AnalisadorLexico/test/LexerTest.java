@@ -1,8 +1,14 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class LexerTest {
@@ -151,40 +157,150 @@ public class LexerTest {
         System.out.println("PASSOU: rejeição de comentário não terminado");
     }
 
-    
     private static void testOfficialFiles() {
-        String[] fileNames = {
-            "Main.jack",
-            "Square.jack",
-            "SquareGame.jack"
+        String[][] files = {
+            {"Main.jack", "MainT.xml"},
+            {"Square.jack", "SquareT.xml"},
+            {"SquareGame.jack", "SquareGameT.xml"}
         };
 
-        for (String fileName : fileNames) {
-            Path path = Path.of("test", "fixtures", fileName);
+        for (String[] pair : files) {
+            Path sourcePath = Path.of(
+                "test", "fixtures", pair[0]
+            );
+
+            Path expectedPath = Path.of(
+                "test", "fixtures", pair[1]
+            );
 
             try {
-                String input = Files.readString(path);
-
+                String input = Files.readString(sourcePath);
                 Lexer lexer = new Lexer(input);
-                List<Token> tokens = lexer.tokenize();
+                List<Token> actualTokens = lexer.tokenize();
 
-                if (tokens.isEmpty()) {
-                    throw new AssertionError(
-                        "Nenhum token foi gerado para " + fileName
-                    );
-                }
+                assertMatchesExpectedXml(
+                    actualTokens,
+                    expectedPath,
+                    pair[0]
+                );
 
                 System.out.println(
-                    "PASSOU: " + fileName
-                    + " (" + tokens.size() + " tokens)"
+                    "PASSOU: " + pair[0]
+                    + " — " + actualTokens.size() + " tokens conferidos"
                 );
 
             } catch (IOException e) {
                 throw new RuntimeException(
-                    "Não foi possível ler o arquivo: " + path,
+                    "Erro ao ler os arquivos de teste: " + pair[0],
                     e
                 );
             }
+        }
+    }
+
+    
+    private static void assertMatchesExpectedXml(
+            List<Token> actualTokens,
+            Path expectedPath,
+            String sourceName) throws IOException {
+
+        try {
+            DocumentBuilderFactory factory =
+                DocumentBuilderFactory.newInstance();
+
+            factory.setFeature(
+                "http://apache.org/xml/features/disallow-doctype-decl",
+                true
+            );
+
+            Document document = factory
+                .newDocumentBuilder()
+                .parse(expectedPath.toFile());
+
+            Element root = document.getDocumentElement();
+
+            if (!root.getTagName().equals("tokens")) {
+                throw new AssertionError(
+                    "XML de referência inválido: " + expectedPath
+                );
+            }
+
+            List<String> expectedTypes = new ArrayList<>();
+            List<String> expectedValues = new ArrayList<>();
+
+            NodeList children = root.getChildNodes();
+
+            for (int i = 0; i < children.getLength(); i++) {
+                Node node = children.item(i);
+
+                if (node.getNodeType() != Node.ELEMENT_NODE) {
+                    continue;
+                }
+
+                Element element = (Element) node;
+
+                expectedTypes.add(element.getTagName());
+                expectedValues.add(element.getTextContent().trim());
+            }
+
+            if (actualTokens.size() != expectedTypes.size()) {
+                throw new AssertionError(
+                    sourceName
+                    + ": quantidade de tokens diferente. Esperado: "
+                    + expectedTypes.size()
+                    + ", recebido: " + actualTokens.size()
+                );
+            }
+
+            for (int i = 0; i < actualTokens.size(); i++) {
+                Token actual = actualTokens.get(i);
+
+                String expectedType = expectedTypes.get(i);
+                String expectedValue = expectedValues.get(i);
+
+                String actualType = toXmlTokenType(actual.getType());
+
+                if (!actualType.equals(expectedType)
+                        || !actual.getValue().equals(expectedValue)) {
+
+                    throw new AssertionError(
+                        sourceName
+                        + ": divergência no token " + (i + 1)
+                        + "\nTipo esperado: " + expectedType
+                        + "\nTipo recebido: " + actualType
+                        + "\nValor esperado: [" + expectedValue + "]"
+                        + "\nValor recebido: [" + actual.getValue() + "]"
+                    );
+                }
+            }
+
+        } catch (AssertionError e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(
+                "Não foi possível comparar com o XML: " + expectedPath,
+                e
+            );
+        }
+    }
+
+    
+    private static String toXmlTokenType(TokenType type) {
+        switch (type) {
+            case KEYWORD:
+                return "keyword";
+            case SYMBOL:
+                return "symbol";
+            case INTEGER_CONSTANT:
+                return "integerConstant";
+            case STRING_CONSTANT:
+                return "stringConstant";
+            case IDENTIFIER:
+                return "identifier";
+            default:
+                throw new IllegalArgumentException(
+                    "Tipo de token desconhecido: " + type
+                );
         }
     }
 
