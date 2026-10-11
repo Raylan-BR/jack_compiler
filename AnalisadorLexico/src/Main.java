@@ -7,41 +7,51 @@ public class Main {
 
     public static void main(String[] args) {
 
+        // Arquivos que irão ser lidos
+        String[] arquivos = {
+            "Main",
+            "Square",
+            "SquareGame"
+        };
+
         try {
-            // Lê o arquivo Main.jack
-            Path filePath = Path.of(
-                "AnalisadorLexico", "test", 
-                "fixtures", "Main.jack"
-        );
+            for (String arquivo : arquivos) {
+                // Lê o arquivo .jack
+                Path filePath = Path.of(
+                    "AnalisadorLexico", "test", 
+                    "fixtures", arquivo + ".jack"
+                );
 
-            String jackCode = Files.readString(filePath);
+                // Lê o conteúdo do arquivo .jack
+                String jackCode = Files.readString(filePath);
 
-            // Instancia o Lexer e gera a lista de tokens
-            Lexer lexer = new Lexer(jackCode);
-            List<Token> tokens = lexer.tokenize();
+                // Instancia o Lexer e gera a lista de tokens
+                Lexer lexer = new Lexer(jackCode);
+                List<Token> tokens = lexer.tokenize();
 
-            // Imprime a lista de tokens gerados
+                // Imprime a lista de tokens gerados
+                System.out.println("Tokens do arquivo " + arquivo + ".jack:");
+                for (Token token : tokens) {
+                    System.out.println(token);
+                }
 
-            for (Token token : tokens) {
-                System.out.println(token);
+                // Instancia o TokenXmlWriter e gera o XML
+                TokenXmlWriter xmlWriter = new TokenXmlWriter();
+                String xmlOutput = xmlWriter.write(tokens);
+
+                // Cria diretório de saída e escreve o arquivo XML
+                Path outputPath = Path.of(
+                    "AnalisadorLexico", "test", 
+                    "fixtures", arquivo + "TGenerated.xml"
+                );
+
+                Files.createDirectories(outputPath.getParent());
+
+                Files.writeString(outputPath, xmlOutput);
             }
 
-            // Instancia o TokenXmlWriter e gera o XML
-            TokenXmlWriter xmlWriter = new TokenXmlWriter();
-            String xmlOutput = xmlWriter.write(tokens);
-
-            // Cria diretório de saída e escreve o arquivo XML
-            Path outputPath = Path.of(
-                "AnalisadorLexico", "test", 
-                "fixtures", "MainTGenerated.xml"
-            );
-
-            Files.createDirectories(outputPath.getParent());
-
-            Files.writeString(outputPath, xmlOutput);
-
         } catch (IOException e) {
-            System.err.println("Erro ao ler o arquivo Main.jack:");
+            System.err.println("Erro ao ler ou salvar arquivo: " + e.getMessage());
         }
     }
 }
