@@ -26,6 +26,20 @@ public class Main {
                 System.out.println(token);
             }
 
+            // Instancia o TokenXmlWriter e gera o XML
+            TokenXmlWriter xmlWriter = new TokenXmlWriter();
+            String xmlOutput = xmlWriter.write(tokens);
+
+            // Cria diretório de saída e escreve o arquivo XML
+            Path outputPath = Path.of(
+                "AnalisadorLexico", "test", 
+                "fixtures", "MainTGenerated.xml"
+            );
+
+            Files.createDirectories(outputPath.getParent());
+
+            Files.writeString(outputPath, xmlOutput);
+
         } catch (IOException e) {
             System.err.println("Erro ao ler o arquivo Main.jack:");
         }
