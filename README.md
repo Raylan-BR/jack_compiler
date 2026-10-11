@@ -16,7 +16,7 @@ O analisador léxico recebe um arquivo-fonte `.jack`, identifica suas unidades l
 A estrutura relevante do projeto é apresentada a seguir:
 
 ```text
-Analisador Lexico/
+AnalisadorLexico/
 ├── src/
 │   ├── Main.java
 │   ├── Lexer.java
@@ -26,7 +26,13 @@ Analisador Lexico/
     └── fixtures/
         ├── Main.jack
         ├── MainT.xml
-        └── MainTGenerated.xml
+        ├── MainTGenerated.xml
+        ├── Square.jack
+        ├── SquareT.xml
+        ├── SquareTGenerated.xml
+        ├── SquareGame.jack
+        ├── SquareGameT.xml
+        └── SquareGameTGenerated.xml
 ```
 
 - `Main.java`: ponto de entrada do programa, responsável por executar o analisador léxico e gerar o arquivo de saída.
@@ -36,6 +42,12 @@ Analisador Lexico/
 - `Main.jack`: arquivo de entrada utilizado nos testes.
 - `MainT.xml`: arquivo oficial de referência disponibilizado pelo projeto Nand2Tetris.
 - `MainTGenerated.xml`: arquivo gerado pelo nosso analisador para comparação com o gabarito.
+- `Square.jack:` arquivo de entrada do exemplo Square.
+- `SquareT.xml:` arquivo XML oficial de referência para o `Square.jack`.
+- `SquareTGenerated.xml:` arquivo XML gerado pelo analisador a partir do `Square.jack`.
+- `SquareGame.jack:` arquivo de entrada do exemplo SquareGame.
+- `SquareGameT.xml:` arquivo XML oficial de referência para o `SquareGame.jack`.
+- `SquareGameTGenerated.xml:` arquivo XML gerado pelo analisador a partir do `SquareGame.jack`.
 
 ## 4. Requisitos para execução
 
