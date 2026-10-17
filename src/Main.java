@@ -25,7 +25,7 @@ public class Main {
                 // Lê o conteúdo do arquivo .jack
                 String jackCode = Files.readString(filePath);
 
-                // Instancia o Lexer e gera a lista de tokens
+                // Instancia o Scanner e gera a lista de tokens
                 Lexer lexer = new Lexer(jackCode);
                 List<Token> tokens = lexer.tokenize();
 
