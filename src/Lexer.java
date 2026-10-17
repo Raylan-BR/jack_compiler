@@ -5,10 +5,29 @@ public class Lexer {
 
     private final String input;
     private int position;
+    private int line;
+    private int column;
 
     public Lexer(String input) {
         this.input = input;
         this.position = 0;
+        this.line = 1;
+        this.column = 1;
+    }
+
+    // Consome um caractere e atualiza a posição.
+    private char advanceChar() {
+        char current = input.charAt(position);
+        position++;
+
+        if (current == '\n') {
+            line++;
+            column = 1;
+        } else {
+            column++;
+        }
+
+        return current;
     }
 
     public List<Token> tokenize() {
@@ -16,173 +35,186 @@ public class Lexer {
         List<Token> tokens = new ArrayList<>();
 
         while (position < input.length()) {
-
             char current = input.charAt(position);
 
-            // Ignorar espaços, tabs e quebras de linha
+            // Ignora espaços, tabulações e quebras de linha.
             if (Character.isWhitespace(current)) {
-                position++;
+                advanceChar();
                 continue;
             }
 
-            // Ignorar comentários de linha: //
+            // Ignora comentários de linha: //
             if (current == '/'
                     && position + 1 < input.length()
                     && input.charAt(position + 1) == '/') {
 
-                position += 2;
-
                 while (position < input.length()
-                        && input.charAt(position) != '\n'
-                        && input.charAt(position) != '\r') {
-                    position++;
+                        && input.charAt(position) != '\n') {
+                    advanceChar();
                 }
-
                 continue;
             }
 
-            // Ignorar comentários de bloco: /* ... */
+            // Ignora comentários de bloco: /* ... */
             if (current == '/'
                     && position + 1 < input.length()
                     && input.charAt(position + 1) == '*') {
 
-                position += 2;
+                int commentLine = line;
+                int commentColumn = column;
+
+                advanceChar(); // /
+                advanceChar(); // *
+
                 boolean closed = false;
 
-                while (position + 1 < input.length()) {
+                while (position < input.length()) {
                     if (input.charAt(position) == '*'
+                            && position + 1 < input.length()
                             && input.charAt(position + 1) == '/') {
-                        position += 2;
+
+                        advanceChar(); // *
+                        advanceChar(); // /
                         closed = true;
                         break;
                     }
 
-                    position++;
+                    advanceChar();
                 }
 
                 if (!closed) {
                     throw new RuntimeException(
-                        "Comentário de bloco não terminado."
+                            "Comentário não fechado na linha "
+                            + commentLine + ", coluna " + commentColumn
                     );
                 }
 
                 continue;
             }
 
-            // String
+            // Guarda a posição inicial de cada token.
+            int tokenLine = line;
+            int tokenColumn = column;
+
             if (current == '"') {
-                tokens.add(readString());
+                tokens.add(readString(tokenLine, tokenColumn));
                 continue;
             }
 
-            // Símbolo
             if (JackSymbols.isSymbol(current)) {
-                tokens.add(
-                        new Token(
-                                TokenType.SYMBOL,
-                                String.valueOf(current)
-                        )
-                );
+                advanceChar();
 
-                position++;
+                tokens.add(new Token(
+                        TokenType.SYMBOL,
+                        String.valueOf(current),
+                        tokenLine,
+                        tokenColumn
+                ));
                 continue;
             }
 
-            // Número inteiro
             if (Character.isDigit(current)) {
-                tokens.add(readInteger());
+                tokens.add(readInteger(tokenLine, tokenColumn));
                 continue;
             }
 
-            // Identificador ou keyword
             if (Character.isLetter(current) || current == '_') {
-                tokens.add(readIdentifierOrKeyword());
+                tokens.add(readIdentifierOrKeyword(
+                        tokenLine, tokenColumn
+                ));
                 continue;
             }
 
-            // Caractere inválido
             throw new RuntimeException(
-                    "Caractere inválido na posição "
-                            + position
-                            + ": "
-                            + current
+                    "Caractere inválido na linha " + line
+                    + ", coluna " + column + ": " + current
             );
         }
 
         return tokens;
     }
 
-    private Token readString() {
-
-        // Pula a primeira aspas
-        position++;
+    private Token readString(int tokenLine, int tokenColumn) {
+        advanceChar(); // Aspas iniciais
 
         StringBuilder value = new StringBuilder();
 
         while (position < input.length()) {
-
             char current = input.charAt(position);
 
-            // Encontrou a aspas final
             if (current == '"') {
-                position++;
+                advanceChar(); // Aspas finais
 
                 return new Token(
                         TokenType.STRING_CONSTANT,
-                        value.toString()
+                        value.toString(),
+                        tokenLine,
+                        tokenColumn
                 );
             }
 
-            value.append(current);
-            position++;
+            if (current == '\n' || current == '\r') {
+                throw new RuntimeException(
+                        "Quebra de linha dentro de string na linha "
+                        + line + ", coluna " + column
+                );
+            }
+
+            value.append(advanceChar());
         }
 
         throw new RuntimeException(
-                "String não fechada."
+                "String não fechada na linha " + tokenLine
+                + ", coluna " + tokenColumn
         );
     }
-    
-    private Token readInteger() {
 
+    private Token readInteger(int tokenLine, int tokenColumn) {
         StringBuilder value = new StringBuilder();
 
         while (position < input.length()
                 && Character.isDigit(input.charAt(position))) {
-
-            value.append(input.charAt(position));
-            position++;
+            value.append(advanceChar());
         }
 
-        int number = Integer.parseInt(value.toString());
+        String numberText = value.toString();
 
-        // Jack permite inteiros de 0 a 32767
-        if (number < 0 || number > 32767) {
+        try {
+            int number = Integer.parseInt(numberText);
+
+            if (number > 32767) {
+                throw new RuntimeException(
+                        "Inteiro fora do intervalo na linha "
+                        + tokenLine + ", coluna " + tokenColumn
+                        + ": " + numberText
+                );
+            }
+        } catch (NumberFormatException e) {
             throw new RuntimeException(
-                    "Integer constant fora do intervalo: "
-                            + number
+                    "Inteiro fora do intervalo na linha "
+                    + tokenLine + ", coluna " + tokenColumn
+                    + ": " + numberText
             );
         }
 
         return new Token(
                 TokenType.INTEGER_CONSTANT,
-                value.toString()
+                numberText,
+                tokenLine,
+                tokenColumn
         );
     }
 
-    private Token readIdentifierOrKeyword() {
+    private Token readIdentifierOrKeyword(
+            int tokenLine, int tokenColumn) {
 
         StringBuilder value = new StringBuilder();
 
         while (position < input.length()) {
-
             char current = input.charAt(position);
 
-            if (Character.isLetterOrDigit(current)
-                    || current == '_') {
-
-                value.append(current);
-                position++;
-
+            if (Character.isLetterOrDigit(current) || current == '_') {
+                value.append(advanceChar());
             } else {
                 break;
             }
@@ -190,16 +222,10 @@ public class Lexer {
 
         String word = value.toString();
 
-        if (JackKeywords.isKeyword(word)) {
-            return new Token(
-                    TokenType.KEYWORD,
-                    word
-            );
-        }
+        TokenType type = JackKeywords.isKeyword(word)
+                ? TokenType.KEYWORD
+                : TokenType.IDENTIFIER;
 
-        return new Token(
-                TokenType.IDENTIFIER,
-                word
-        );
+        return new Token(type, word, tokenLine, tokenColumn);
     }
 }
