@@ -10,12 +10,12 @@ public class Parser {
     }
 
     // Verifica se todos os tokens foram consumidos.
-    private boolean isAtEnd() {
+    boolean isAtEnd() {
         return current >= tokens.size();
     }
 
     // Retorna o token atual sem avançar.
-    private Token peek() {
+    Token peek() {
         if (isAtEnd()) {
             return null;
         }
@@ -24,17 +24,17 @@ public class Parser {
     }
 
     // Consome o token atual e avança para o próximo.
-    private Token advance() {
-        if (!isAtEnd()) {
-            current++;
+    Token advance() {
+        if (isAtEnd()) {
+            return null;
         }
 
-        return tokens.get(current - 1);
+        return tokens.get(current++);
     }
 
     // Verifica se o token atual é de determinado tipo.
-    private boolean match(TokenType type) {
-        if (isAtEnd()) {
+    boolean match(TokenType type) {
+        if (isAtEnd() || peek().getType() != type) {
             return false;
         }
 
@@ -45,12 +45,13 @@ public class Parser {
         advance();
         return true;
     }
-    private Token consume(TokenType type) {
+
+    // Consome o token atual e avança para o próximo.
+    Token consume(TokenType type) {
         if (isAtEnd()) {
             throw new RuntimeException(
-                "Erro de sintaxe: esperado " + type
-                + ", mas o arquivo terminou."
-            );
+                    "Erro de sintaxe: esperado " + type
+                            + ", mas o arquivo terminou.");
         }
 
         if (peek().getType() == type) {
@@ -61,9 +62,8 @@ public class Parser {
 
         throw new RuntimeException(
             "Erro de sintaxe na linha " + token.getLine()
-            + ", coluna " + token.getColumn()
-            + ": esperado " + type
-            + ", mas encontrado '" + token.getValue() + "'."
-        );
+                    + ", coluna " + token.getColumn()
+                    + ": esperado " + type
+                    + ", mas encontrado '" + token.getValue() + "'.");
     }
 }

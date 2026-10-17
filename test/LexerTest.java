@@ -170,8 +170,17 @@ public class LexerTest {
             );
 
             Path expectedPath = Path.of(
-                "test", "fixtures", pair[1]
+                "test", "expected", pair[1]
             );
+
+            System.out.println("Diretório atual: " +
+                System.getProperty("user.dir"));
+
+            System.out.println("XML esperado: " +
+                expectedPath.toAbsolutePath());
+
+            System.out.println("Arquivo existe? " +
+                Files.exists(expectedPath));
 
             try {
                 String input = Files.readString(sourcePath);
